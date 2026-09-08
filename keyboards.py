@@ -2,14 +2,22 @@
 # keyboards.py
 from aiogram.types import (
     ReplyKeyboardMarkup, KeyboardButton,
-    InlineKeyboardMarkup, InlineKeyboardButton
+    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 )
+
+from config import MINIAPP_URL
 
 # -------- Main menu (Persian) --------
 def main_menu_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         resize_keyboard=True,
         keyboard=[
+            [
+                KeyboardButton(
+                    text="🌐 صرافی کیانی",
+                    web_app=WebAppInfo(url=MINIAPP_URL),
+                ),
+            ],
             [
                 KeyboardButton(text="ثبت نام ✍️"),
                 KeyboardButton(text="ورود 📥"),
@@ -57,4 +65,3 @@ def registration_navigation() -> InlineKeyboardMarkup:
             ],
         ]
     )
-

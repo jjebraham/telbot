@@ -1,0 +1,35 @@
+name: Python Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q .
+
+      - name: Validate Telegram Mini App types
+        run: |
+          python - <<'PY'
+          from aiogram.types import KeyboardButton, MenuButtonWebApp, WebAppInfo
+
+          url = "https://miniapp.kiani.exchange"
+          web_app = WebAppInfo(url=url)
+          KeyboardButton(text="Open Kiani Exchange", web_app=web_app)
+          MenuButtonWebApp(text="Kiani Exchange", web_app=web_app)
+          print("Telegram Mini App types: OK")
+          PY
