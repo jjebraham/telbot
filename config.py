@@ -1,11 +1,14 @@
 # config.py
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-# Load .env
-dotenv_path = "/home/kianirad2020/telbot/.env"
-if os.path.exists(dotenv_path):
-    print(f"✅ Forcing load of {dotenv_path}")
+# Load .env from the deployed bot directory instead of a hard-coded server path.
+BASE_DIR = Path(__file__).resolve().parent
+dotenv_path = Path(os.getenv("DOTENV_PATH", BASE_DIR / ".env"))
+if dotenv_path.exists():
+    print(f"✅ Loading {dotenv_path}")
     load_dotenv(dotenv_path, override=True)
 else:
     print(f"❌ .env not found at {dotenv_path}")
@@ -25,7 +28,7 @@ EHRAZ_TOKEN = os.getenv("EHRAZ_TOKEN", "").strip() or None
 WALLEX_API_KEY = os.getenv("WALLEX_API_KEY", "").strip() or None
 
 # Database path
-DB_PATH = os.getenv("DB_PATH", "users.db")
+DB_PATH = os.getenv("DB_PATH", str(BASE_DIR / "users.db"))
 
 # Proxy configuration
 PROXY_URL = os.getenv("PROXY_URL", "").strip() or None
