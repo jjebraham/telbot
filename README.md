@@ -4,7 +4,7 @@
 
 An async Telegram bot that registers users for a currency-exchange service. It takes them through a 9-step KYC form in Persian, checks the identity data against an external verification API, and sends each completed application to an admin bot for review. It also quotes live USDT/IRR and USDT/TRY exchange rates.
 
-This repository is an earlier, self-contained version of the bot behind the Kiani Exchange service. The production code is private and has moved on since then. This version can run locally with no real credentials.
+This repository is an earlier, self-contained version of the bot behind the Kiani Exchange service. The production code is private and has moved on since then. To run it locally you need two free Telegram bot tokens from @BotFather. You do not need an Ehraz account, because `EHRAZ_MOCK=true` simulates identity matching.
 
 ## What it does
 
