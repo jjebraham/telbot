@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 import aiohttp
 
-from config import EHRAZ_TOKEN
+from config import EHRAZ_MOCK, EHRAZ_TOKEN
 from .proxy_manager import get_random_proxy
 
 # In-memory attempts limiter (reset daily)
@@ -43,6 +43,9 @@ async def match_card_national_dob(
     JSON: { cardNumber, nationalCode, birthDate }  (birthDate like '13650626')
     Returns True if matched.
     """
+    if EHRAZ_MOCK:
+        logging.warning("EHRAZ_MOCK: simulating a successful identity match")
+        return True
     if not EHRAZ_TOKEN:
         logging.error("EHRAZ_TOKEN is missing; cannot call Ehraz.")
         return False

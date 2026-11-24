@@ -47,8 +47,19 @@ def init_db():
         conn.commit()
 
 # already existing helpers you had:
+# Column names are interpolated into SQL, so only known columns are accepted.
+USER_COLUMNS = {
+    "first_name", "last_name", "phone_number", "national_id", "dob",
+    "bank_card_number", "accepted_terms", "front_id", "back_id",
+    "kyc_status", "reference_code", "kyc_notified",
+}
+
+
 def upsert_user(user_id, **fields):
     """Insert if missing, else update."""
+    unknown = set(fields) - USER_COLUMNS
+    if unknown:
+        raise ValueError(f"unknown user columns: {sorted(unknown)}")
     cols = []
     vals = []
     for k, v in fields.items():

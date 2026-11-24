@@ -8,6 +8,7 @@ import aiohttp
 
 from services.proxy_manager import get_proxy
 from config import WALLEX_API_KEY  # add WALLEX_API_KEY to your config/.env
+from utils.redact import mask_proxy
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ async def _get_json(url: str, headers: Optional[Dict[str, str]] = None) -> Optio
                     return await resp.json(content_type=None)
         except Exception as e:
             # include which proxy was attempted
-            log.error("GET %s via %s failed: %s", url, proxy or "DIRECT", e)
+            log.error("GET %s via %s failed: %s", url, mask_proxy(proxy), e)
             await asyncio.sleep(0.2)
     return None
 

@@ -1,66 +1,89 @@
-# Telegram Bot Project
+# telbot: Telegram registration & KYC bot (aiogram 3)
 
-A comprehensive Telegram bot for user registration, KYC verification, and financial services.
+[![CI](https://github.com/jjebraham/telbot/actions/workflows/python-check.yml/badge.svg)](https://github.com/jjebraham/telbot/actions/workflows/python-check.yml)
 
-## Features
+An async Telegram bot that registers users for a currency-exchange service. It takes them through a 9-step KYC form in Persian, checks the identity data against an external verification API, and sends each completed application to an admin bot for review. It also quotes live USDT/IRR and USDT/TRY exchange rates.
 
-- User registration and authentication
-- KYC (Know Your Customer) verification with ID card uploads
-- Bank card management
-- Currency exchange rates (USDT, TRY, IRR)
-- Payment processing for external websites
-- Admin notifications and logging
-- Multi-language support (Persian/Farsi)
+This repository is an earlier, self-contained version of the bot behind the Kiani Exchange service. The production code is private and has moved on since then. This version can run locally with no real credentials.
 
-## Project Structure
+## What it does
 
-```
-├── bot.py                 # Main bot entry point
-├── config.py             # Configuration settings
-├── database.py           # Database operations
-├── keyboards.py          # Telegram keyboard layouts
-├── states.py             # FSM states for user interactions
-├── handlers/             # Message and callback handlers
-│   ├── menu.py          # Menu navigation handlers
-│   └── registration.py  # User registration handlers
-├── services/            # Business logic services
-│   ├── admin_notify.py  # Admin notification service
-│   ├── ehraz.py         # ID verification service
-│   ├── idle_guard.py    # User session management
-│   ├── price_service.py # Currency price fetching
-│   ├── proxy_manager.py # Proxy management
-│   └── scheduler.py     # Background task scheduler
-└── utils/               # Utility functions
-    ├── form.py          # Form handling utilities
-    └── validators.py    # Input validation functions
+- **Guided registration:** an FSM-driven form (first name → last name → phone (shared contact) → national ID → Jalali date of birth → bank card → terms → ID card front/back photos). A live progress message shows each step, and fields can be edited before you submit.
+- **Input validation:** Iranian national-ID checksum, Luhn check for card numbers, Persian-only names, and Persian/Arabic digit normalisation. It also accepts Jalali dates in many formats (`utils/validators.py`).
+- **Identity matching:** card number + national ID + date of birth are checked against the [Ehraz](https://ehraz.io) API, with a daily attempt limit per user (`services/ehraz.py`).
+- **Admin review:** each finished application is posted to admins by a second bot (`services/admin_notify.py`).
+- **Live prices:** USDT/IRR from Nobitex → Bitpin → Wallex in fallback order, and USDT/TRY from BtcTurk, with caching and optional proxy rotation (`services/price_service.py`).
+- **Engagement:** APScheduler sends follow-up reminders to users who stop mid-registration, and an idle guard returns inactive users to the main menu after 5 minutes.
+- **Telegram Mini App** launcher button in the chat menu.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Telegram user] -->|messages| B[aiogram Dispatcher<br/>bot.py]
+    B --> M[handlers/menu.py<br/>menu, login, prices]
+    B --> R[handlers/registration.py<br/>9-step KYC FSM]
+    R --> V[utils/validators.py]
+    R --> E[services/ehraz.py<br/>identity match API]
+    R --> DB[(SQLite<br/>database.py)]
+    R --> A[services/admin_notify.py<br/>admin bot]
+    M --> P[services/price_service.py<br/>Nobitex / Bitpin / Wallex / BtcTurk]
+    E & P --> X[services/proxy_manager.py]
+    S[services/scheduler.py<br/>APScheduler reminders] --> U
 ```
 
-## Setup
+## Run it locally
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+```
 
-2. Configure environment variables in `.env`:
-   ```
-   BOT_TOKEN=your_bot_token
-   ADMIN_BOT_TOKEN=your_admin_bot_token
-   ADMIN_CHAT_ID=your_admin_chat_id
-   ```
+Create two bots with [@BotFather](https://t.me/BotFather), put their tokens in `MAIN_BOT_TOKEN` and `ADMIN_BOT_TOKEN`, and set `ADMIN_CHAT_ID` to your own chat ID. `EHRAZ_MOCK=true` (already set in `.env.example`) simulates identity matching, so the whole registration flow works without an Ehraz account.
 
-3. Run the bot:
-   ```bash
-   python bot.py
-   ```
+```bash
+python bot.py
+```
 
-## Dependencies
+The SQLite database is created automatically on first run.
 
-- aiogram - Telegram Bot API framework
-- aiohttp - HTTP client/server
-- sqlite3 - Database
-- asyncio - Asynchronous programming
+## Tests
+
+```bash
+python -m pytest -q
+```
+
+The tests cover the validators, the price-API parsers, the database layer (on a temporary SQLite file), proxy-credential masking and the identity-matching mock. CI runs them on every push and pull request, and also checks that the bot module imports and the Mini App types build.
+
+## External services
+
+| Service | Used for | Needed locally? |
+|---|---|---|
+| Telegram Bot API | everything | yes (two free bot tokens) |
+| Ehraz | card / national ID / DOB matching | no, use `EHRAZ_MOCK=true` |
+| Nobitex, Bitpin, Wallex, BtcTurk public APIs | live prices | no key needed; Wallex key optional |
+
+## Security notes
+
+- All credentials come from environment variables, and `.env` is git-ignored.
+- Proxy credentials are masked before they are logged (`utils/redact.py`).
+- Database column names are allow-listed before they are put into SQL.
+- ID card photos are stored only as Telegram `file_id`s, never downloaded.
+
+## Project structure
+
+```
+bot.py                  entry point: bot, dispatcher, routers, scheduler, Mini App button
+config.py               environment configuration
+database.py             SQLite schema and helpers
+keyboards.py, states.py reply keyboards and FSM states
+handlers/               menu and registration routers
+services/               Ehraz, prices, proxies, scheduler, idle guard, admin notifications
+utils/                  validators, form rendering, log redaction
+tests/                  pytest suite
+```
 
 ## License
 
-This project is private and proprietary.
+The source is published so that it can be reviewed as a portfolio sample. No open-source license is granted. Please contact me before reusing it.

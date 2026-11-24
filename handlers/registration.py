@@ -384,22 +384,9 @@ async def step_back(m: types.Message, state: FSMContext):
         "kyc_notified": 0,
     }
 
-    # Support both upsert_user styles (kwargs or dict)
-    try:
-        upsert_user(
-            uid,
-            first_name=payload["first_name"],
-            last_name=payload["last_name"],
-            phone_number=payload["phone_number"],
-            kyc_status=payload["kyc_status"],
-            reference_code=payload["reference_code"],
-            bank_card_number=payload["bank_card_number"],
-            front_id=payload["front_id"],
-            back_id=payload["back_id"],
-        )
-    except TypeError:
-        # Newer signature accepts a dict
-        upsert_user(payload)
+    # Persist every collected field (national_id, dob and accepted_terms were
+    # previously dropped here).
+    upsert_user(uid, **{k: v for k, v in payload.items() if k != "id"})
 
     # Save doc file_ids (if helper exists)
     try:
